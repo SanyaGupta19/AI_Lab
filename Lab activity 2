@@ -1,0 +1,114 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <queue>
+#include <cmath>
+
+using namespace std;
+
+struct State {
+    int monkeyX, monkeyY;
+    int bananaX, bananaY;
+    int boxX, boxY;
+    int pathCost;
+
+    bool operator<(const State& other) const {
+        return pathCost > other.pathCost; // Min-heap, so inverted comparison
+    }
+};
+
+// Define the dimensions of the room
+const int ROOM_WIDTH = 5;
+const int ROOM_HEIGHT = 5;
+
+// Define constants for direction
+const int UP = 0;
+const int DOWN = 1;
+const int LEFT = 2;
+const int RIGHT = 3;
+
+// Function to check if a state is valid
+bool isValid(int x, int y) {
+    return x >= 0 && x < ROOM_WIDTH && y >= 0 && y < ROOM_HEIGHT;
+}
+
+// Heuristic function (estimate of remaining cost)
+int heuristic(const State& state) {
+    // Manhattan distance from monkey to banana
+    int monkeyToBanana = abs(state.monkeyX - state.bananaX) + abs(state.monkeyY - state.bananaY);
+
+    // Manhattan distance from box to banana
+    int boxToBanana = abs(state.boxX - state.bananaX) + abs(state.boxY - state.bananaY);
+
+    return monkeyToBanana + boxToBanana;
+}
+
+// AO* algorithm to solve the Monkey and Banana problem
+bool solveMonkeyBanana() {
+    State initialState = {0, 0, 4, 4, 1, 0};
+    priority_queue<State> openList;
+
+    openList.push(initialState);
+
+    while (!openList.empty()) {
+        State currentState = openList.top();
+        openList.pop();
+
+        if (currentState.monkeyX == currentState.bananaX && currentState.monkeyY == currentState.bananaY) {
+            cout << "Monkey has reached the banana!" << endl;
+            return true;
+        }
+
+        // Try moving the monkey
+        for (int dir = UP; dir <= RIGHT; dir++) {
+            int newX = currentState.monkeyX;
+            int newY = currentState.monkeyY;
+
+            if (dir == UP) newY--;
+            else if (dir == DOWN) newY++;
+            else if (dir == LEFT) newX--;
+            else newX++;
+
+            if (isValid(newX, newY)) {
+                State newState = currentState;
+                newState.monkeyX = newX;
+                newState.monkeyY = newY;
+                newState.pathCost = currentState.pathCost + 1;
+                newState.pathCost += heuristic(newState);
+                openList.push(newState);
+            }
+        }
+
+        // Try pushing the box
+        if (currentState.monkeyX == currentState.boxX && abs(currentState.monkeyY - currentState.boxY) == 1) {
+            int newBoxX = currentState.boxX;
+            int newBoxY = currentState.boxY;
+
+            if (currentState.monkeyY < currentState.boxY) {
+                newBoxY++;
+            } else {
+                newBoxY--;
+            }
+
+            if (isValid(newBoxX, newBoxY) && (newBoxX != currentState.bananaX || newBoxY != currentState.bananaY)) {
+                State newState = currentState;
+                newState.boxX = newBoxX;
+                newState.boxY = newBoxY;
+                newState.pathCost = currentState.pathCost + 1;
+                newState.pathCost += heuristic(newState);
+                openList.push(newState);
+            }
+        }
+    }
+
+    cout << "No solution found." << endl;
+    return false;
+}
+
+int main() {
+    if (solveMonkeyBanana()) {
+        // Print the solution or perform any desired actions
+    }
+
+    return 0;
+}
